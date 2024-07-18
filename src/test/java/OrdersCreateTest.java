@@ -1,15 +1,11 @@
-import io.restassured.RestAssured;
-import io.restassured.response.Response;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+
 import io.qameta.allure.junit4.DisplayName;
 import io.qameta.allure.Description;
-import io.qameta.allure.Step;
+import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import java.util.List;
-import static org.hamcrest.Matchers.*;
+import orderIn.OrdersIN;
 
 //Orders - Создание заказа
 @RunWith(Parameterized.class)
@@ -17,7 +13,8 @@ public class OrdersCreateTest extends ApiScooter{
     Integer trackId;
     private List<String> color;
     private Integer code;
-    Orders orders = new Orders();
+
+    OrdersStep ordersStep = new OrdersStep();
 
     public OrdersCreateTest(List<String>  color, Integer code) {
         this.color = color;
@@ -35,15 +32,9 @@ public class OrdersCreateTest extends ApiScooter{
         };
     }
 
-
-    @Before
-    public void setUp() {
-        RestAssured.baseURI = urlApi;
-    }
-
     @Test
-    @DisplayName("Check create order status code of /api/v1/orders")
-    @Description("Code test create order for /api/v1/orders")
+    @DisplayName("Check create order status code")
+    @Description("Code test create order")
     public void checkOrdersCreateTest() {
         OrdersIN json  = new OrdersIN( "Naruto",
                 "Uchiha",
@@ -54,29 +45,8 @@ public class OrdersCreateTest extends ApiScooter{
                 "2020-06-06",
                 "Saske, come back to Konoha",
                 color);
-        postRequestOrdersCreateTest(json).then().assertThat().body("track", notNullValue()).and().statusCode(code);
+        ordersStep.checkRequestOrdersCreate(json, code);
     }
 
-
-    // Создаем заказа
-    @Step("Send Post request to /api/v1/orders")
-    public Response postRequestOrdersCreateTest(OrdersIN jason) {
-        Response response = orders.addOrders(jason);
-        trackId = response.then().extract().body().path("track");
-        return response;
-    }
-
-
-    // Отмена заказа
-    @Step("Send Put request to /api/v1/orders/cancel")
-    public void putCancelOrders() {
-        orders.cancelOrders(trackId);
-    }
-
-    @After
-    public void cancelOrders() {
-        //Отмена заказа
-        putCancelOrders();
-    }
 
 }

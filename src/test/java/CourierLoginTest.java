@@ -1,159 +1,89 @@
-import io.restassured.RestAssured;
-import io.restassured.response.Response;
+import io.qameta.allure.junit4.DisplayName;
+import io.qameta.allure.Description;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import io.qameta.allure.junit4.DisplayName;
-import io.qameta.allure.Description;
-import io.qameta.allure.Step;
-import static org.hamcrest.Matchers.*;
-import static org.hamcrest.Matchers.equalTo;
+import courier.CourierIn;
 
 public class CourierLoginTest extends ApiScooter{
-    String json = "{\"login\": \"loginTest123\", \"password\": \"1234\", \"firstName\": \"firstName\"}";
-    String jsonLogin = "{\"login\": \"loginTest123\", \"password\": \"1234\"}";
-    Courier courier = new Courier();
+    CourierStep сourierStep = new CourierStep();
+    CourierIn json  = new CourierIn( "loginTest123",
+            "1234",
+            "firstName");
+
+    CourierIn jsonLogin  = new CourierIn( "loginTest123",
+            "1234");
 
     @Before
     public void setUp() {
-        RestAssured.baseURI= urlApi;
         //Создадим курьера
-        postRequestCourier(json);
+        сourierStep.postRequestCourier(json);
     }
-
 
     //курьер может авторизоваться;
-    //для авторизации нужно передать все обязательные поля- код
+    //для авторизации нужно передать все обязательные поля
     @Test
-    @DisplayName("200-Check courier login status code of /api/v1/courier/login")
-    @Description("Status code 200 courier login for /api/v1/courier/login")
-    public void checkCourierLoginCode() {
-        postRequestCourierLogin(jsonLogin).then().statusCode(200);
+    @DisplayName("200-Check courier login")
+    @Description("Status code 200 courier login")
+    public void checkCourierLogin() {
+        сourierStep.checkLoginCourierBody(jsonLogin, 200, null, true);
     }
 
-    //успешный запрос возвращает id
+    //для авторизации нужно передать все обязательные поля (login отсуствует);
     @Test
-    @DisplayName("200-Check code courier text of /api/v1/courier/login")
-    @Description("Text 200 code courier for /api/v1/courier/login")
-    public void checkCourierLoginText() {
-         postRequestCourierLogin(jsonLogin).then().assertThat().body("id", notNullValue());
+    @DisplayName("400-Check login absent")
+    @Description("Status code 400 login absent")
+    public void checkCourierLoginLoginAbsent() {
+        CourierIn jsonTest  = new CourierIn( null,
+                "1234",
+                null);
+        сourierStep.checkLoginCourierBody(jsonTest, 400, "Недостаточно данных для входа", false);
     }
 
-    //для авторизации нужно передать все обязательные поля (login отсуствует)-код;
+    //для авторизации нужно передать все обязательные поля (password отсуствует);
     @Test
-    @DisplayName("400-Check login absent status code of /api/v1/courier/login")
-    @Description("Status code 400 login absent for /api/v1/courier/login")
-    public void checkCourierLoginLoginAbsentCode() {
-        String jsonTest =  "{ \"password\": \"1234\"}";
-        postRequestCourierLogin(jsonTest).then().statusCode(400);
+    @DisplayName("400-Check password absent")
+    @Description("Status code 400 password absent")
+    public void checkCourierLoginPasswordAbsent() {
+        CourierIn jsonTest  = new CourierIn( "loginTest123",
+                null,
+                null);
+        сourierStep.checkLoginCourierBody(jsonTest, 400, "Недостаточно данных для входа", false);
     }
 
-    //для авторизации нужно передать все обязательные поля (login отсуствует)-текст;
+    //система вернёт ошибку, если неправильно указать логин ;
     @Test
-    @DisplayName("400-Check login absent text of /api/v1/courier/login")
-    @Description("Text 400 login absent for /api/v1/courier/login")
-    public void checkCourierLoginLoginAbsentText() {
-        String jsonTest =  "{ \"password\": \"1234\"}";
-        postRequestCourierLogin(jsonTest).then().assertThat().body("message",equalTo("Недостаточно данных для входа"));
+    @DisplayName("404-Check login error")
+    @Description("Status code 404 login error")
+    public void checkCourierLoginLoginError() {
+        CourierIn jsonTest  = new CourierIn( "Test1234",
+                "1234",
+                "firstName");
+        сourierStep.checkLoginCourierBody(jsonTest, 404, "Учетная запись не найдена", false);
     }
 
-    //для авторизации нужно передать все обязательные поля (password отсуствует)- код;
+    //система вернёт ошибку, если неправильно указать пароль;
     @Test
-    @DisplayName("400-Check password absent status code of /api/v1/courier/login")
-    @Description("Status code 400 password absent for /api/v1/courier/login")
-    public void checkCourierLoginPasswordAbsentCode() {
-        String jsonTest =  "{\"login\": \"loginTest123\"}";
-        postRequestCourierLogin(jsonTest).then().statusCode(400);
+    @DisplayName("404-Check password error")
+    @Description("Status code 404 password error")
+    public void checkCourierLoginPasswordErrore() {
+       CourierIn jsonTest  = new CourierIn( "Test1234",
+                "4321",
+                "firstName");
+        сourierStep.checkLoginCourierBody(jsonTest, 404, "Учетная запись не найдена", false);
     }
 
-    //для авторизации нужно передать все обязательные поля (password отсуствует)- текст;
+    //если авторизоваться под несуществующим пользователем, запрос возвращает ошибку;
     @Test
-    @DisplayName("400-Check password absent text of /api/v1/courier/login")
-    @Description("Text 400 password absent for /api/v1/courier/login")
-    public void checkCourierLoginPasswordAbsentText() {
-        String jsonTest =  "{\"login\": \"loginTest123\"}";
-        postRequestCourierLogin(jsonTest).then().assertThat().body("message",equalTo("Недостаточно данных для входа"));
-    }
-
-    //система вернёт ошибку, если неправильно указать логин - код;
-    @Test
-    @DisplayName("404-Check login error status code of /api/v1/courier/login")
-    @Description("Status code 404 login error for /api/v1/courier/login")
-    public void checkCourierLoginLoginErrorCode() {
-        String jsonTest =  "{\"login\": \"Test1234\", \"password\": \"1234\", \"firstName\": \"firstName\"}";
-        postRequestCourierLogin(jsonTest).then().statusCode(404);
-    }
-
-    //система вернёт ошибку, если неправильно указать логин - текст;
-    @Test
-    @DisplayName("404-Check login error text of /api/v1/courier/login")
-    @Description("Text 404 login error for /api/v1/courier/login")
-    public void checkCourierLoginLoginErrorText() {
-        String jsonTest =  "{\"login\": \"Test1234\", \"password\": \"1234\", \"firstName\": \"firstName\"}";
-        postRequestCourierLogin(jsonTest).then().assertThat().body("message",equalTo("Учетная запись не найдена"));
-    }
-
-    //система вернёт ошибку, если неправильно указать пароль - код;
-    @Test
-    @DisplayName("404-Check password error status code of /api/v1/courier/login")
-    @Description("Status code 404 password error for /api/v1/courier/login")
-    public void checkCourierLoginPasswordErrorCode() {
-        String jsonTest =  "{\"login\": \"Test1234\", \"password\": \"4321\", \"firstName\": \"firstName\"}";
-        postRequestCourierLogin(jsonTest).then().statusCode(404);
-    }
-    //система вернёт ошибку, если неправильно указать пароль - текст;
-    @Test
-    @DisplayName("404-Check password error text of /api/v1/courier/login")
-    @Description("Text 404 password error for /api/v1/courier/login")
-    public void checkCourierLoginPasswordErrorText() {
-        String jsonTest =  "{\"login\": \"Test1234\", \"password\": \"4321\", \"firstName\": \"firstName\"}";
-        postRequestCourierLogin(jsonTest).then().assertThat().body("message",equalTo("Учетная запись не найдена"));
-    }
-
-    //если авторизоваться под несуществующим пользователем, запрос возвращает ошибку - код;
-    @Test
-    @DisplayName("404-Check not courier status code of /api/v1/courier/login")
-    @Description("Status code 404 not courier for /api/v1/courier/login")
-    public void checkCourierLoginNotCourierCode() {
-        deleteRequestCourierLogin(jsonLogin);
-        postRequestCourierLogin(jsonLogin).then().statusCode(404);
-    }
-
-    //если авторизоваться под несуществующим пользователем, запрос возвращает ошибку - код;
-    @Test
-    @DisplayName("404-Check not courier text of /api/v1/courier/login")
-    @Description("Text 404 not courier for /api/v1/courier/login")
-    public void checkCourierLoginNotCourierText() {
-        deleteRequestCourierLogin(jsonLogin);
-        postRequestCourierLogin(jsonLogin).then().assertThat().body("message",equalTo("Учетная запись не найдена"));
+    @DisplayName("404-Check not courier")
+    @Description("Status code 404 not courier")
+    public void checkCourierLoginNotCourier() {
+        сourierStep.deleteCourierLogin(jsonLogin);
+        сourierStep.checkLoginCourierBody(jsonLogin, 404, "Учетная запись не найдена", false);
     }
 
     @After
     public void deleteCourier(){
-        deleteRequestCourierLogin(jsonLogin);
+        сourierStep.deleteCourierLogin(jsonLogin);
     }
-
-    // Логин курьера в системе
-    @Step("Send Post request to /api/v1/courier/login")
-    public Response postRequestCourierLogin(String bodyJason){
-        Response response =courier.loginCourier(bodyJason);
-        return response;
-    }
-
-    // Создаем курьера
-    @Step("Send Post request to /api/v1/courier")
-    public Response postRequestCourier(String bodyJason) {
-        Response response = courier.addCourier(bodyJason);
-        return response;
-    }
-
-    // Удаление курьера
-    @Step("Send delete request to /api/v1/courier/login")
-    public void deleteRequestCourierLogin(String bodyJason){
-        //Логин курьера в системе ID
-        Integer id = courier.loginIdCourier(bodyJason);
-        //Удалим
-        courier.deleteCourier(id);
-    }
-
 }

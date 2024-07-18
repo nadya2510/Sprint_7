@@ -1,57 +1,33 @@
 import io.restassured.response.Response;
-import static io.restassured.RestAssured.given;
+import orderIn.OrdersIN;
+import java.util.HashMap;
+import java.util.Map;
 
-public class Orders {
+
+public class Orders extends ApiScooter{
+    public static final String URL_ORDERS = "/api/v1/orders";
+    public static final String URL_ORDERS_CANCEL = "/api/v1/orders/cancel";
+    public static final String URL_ORDERS_ACCEPT = "/api/v1/orders/accept";
+    public static final String URL_ORDERS_TRACK = "/api/v1/orders/track";
     //Создание заказа
     public Response addOrders(OrdersIN jason) {
-        Response response = given()
-                .header("Content-type", "application/json")
-                .and()
-                .body(jason)
-                .when()
-                .post("/api/v1/orders");
-        return response;
+        return doPostRequest(URL_ORDERS,jason);
     }
     //Отменить заказ
     public Response cancelOrders(Integer trackId) {
         String jason = String.format("{\"track\": %s}", trackId);
-        Response response =  given()
-                .header("Content-type", "application/json")
-                .and()
-                .body(jason)
-                .when()
-                .put("/api/v1/orders/cancel");
-        return response;
+        return doPutRequest(URL_ORDERS_CANCEL,jason);
     }
     //Получение списка заказов.
-    public Response getSpisokOrders() {
-        Response response = given()
-                .header("Content-type", "application/json")
-                .and()
-                .when()
-                .get("/api/v1/orders");
-        return response;
+    public Response getListOrders() {
+        return doGetRequest(URL_ORDERS);
     }
     //Принять заказ
     public Response acceptOrders(Integer id, Integer courierId){
-        String putS = String.format("/api/v1/orders/accept/%d", id);
-        Response response;
-        if  (courierId != null){
-            response = given()
-                    .header("Content-type", "application/json")
-                    .and()
-                    .when()
-                    .queryParam("courierId", courierId)
-                    .put(putS);
-        } else {
-            putS = String.format("/api/v1/orders/accept/%d", id);
-            response = given()
-                    .header("Content-type", "application/json")
-                    .and()
-                    .when()
-                    .put(putS);
-        }
-
+        String putS = URL_ORDERS_ACCEPT+"/"+id;
+        Map<String, Integer> params = new HashMap<>();
+        params.put("courierId", courierId);
+        Response response = doPutRequest(putS, params);
         return response;
     }
 
@@ -59,19 +35,12 @@ public class Orders {
     public Response trackOrders(Integer track){
         Response response;
         if (track !=null){
-         response = given()
-                .header("Content-type", "application/json")
-                .and()
-                .when()
-                .queryParam("t", track)
-                .get("/api/v1/orders/track");
+         Map<String, Integer> params = new HashMap<>();
+         params.put("t", track);
+         response = doGetRequest(URL_ORDERS_TRACK,params);
+
         } else {
-             response = given()
-                    .header("Content-type", "application/json")
-                    .and()
-                    .when()
-                    .get("/api/v1/orders/track");
-        }
+             response = doGetRequest(URL_ORDERS_TRACK);        }
         return response;
     }
 }
